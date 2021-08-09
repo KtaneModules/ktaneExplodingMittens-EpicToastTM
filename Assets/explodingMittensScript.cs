@@ -3,6 +3,8 @@ using System.Linq;
 using KModkit;
 using System.Collections;
 using Random = UnityEngine.Random;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 public class explodingMittensScript : MonoBehaviour {
 
@@ -366,5 +368,100 @@ public class explodingMittensScript : MonoBehaviour {
     void DebugMsg(string message)
     {
         Debug.LogFormat("[Exploding Mittens #{0}] {1}", _moduleId, message);
+    }
+
+    //twitch plays
+    #pragma warning disable 414
+    private readonly string TwitchHelpMessage = @"!{0} play <#> [Plays the specified card from left to right (1-3)] | !{0} draw [Draws the top card of the deck] | !{0} discard [Discards the top card of the deck]";
+    #pragma warning restore 414
+
+    IEnumerator ProcessTwitchCommand(string command)
+    {
+        if (Regex.IsMatch(command, @"^\s*draw\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            yield return null;
+            drawSelectable.OnInteract();
+        }
+        if (Regex.IsMatch(command, @"^\s*discard\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            yield return null;
+            discardSelectable.OnInteract();
+        }
+        string[] parameters = command.Split(' ');
+        if (Regex.IsMatch(parameters[0], @"^\s*play\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            yield return null;
+            if (parameters.Length > 2)
+            {
+                yield return "sendtochaterror Too many parameters!";
+            }
+            else if (parameters.Length == 2)
+            {
+                if (!parameters[1].EqualsAny("1", "2", "3"))
+                {
+                    yield return "sendtochaterror!f The specified card to play '" + parameters[1] +  "' is invalid!";
+                    yield break;
+                }
+                int index = int.Parse(parameters[1]) - 1;
+                if (!handObjects[index].activeSelf)
+                {
+                    yield return "sendtochaterror There is not currently a card in that position!";
+                    yield break;
+                }
+                handSelectable[index].OnInteract();
+            }
+            else if (parameters.Length == 1)
+            {
+                yield return "sendtochaterror Please specify which card you wish to play!";
+            }
+        }
+    }
+
+    IEnumerator TwitchHandleForcedSolve()
+    {
+        while (true)
+        {
+            List<int> valids = new List<int>();
+            for (int i = 0; i < 3; i++)
+            {
+                if (handObjects[i].activeSelf)
+                {
+                    if (CheckValidity(handCards[i], ruleTable[tables[tableNumber * 16 + lastCard] * 10 + lastDigit]) && tables[tableNumber * 16 + handCards[i]] != 2)
+                        valids.Add(i);
+                }
+            }
+            if (valids.Count == 0)
+            {
+                if (currentIndex == defuseIndex)
+                {
+                    drawSelectable.OnInteract();
+                    yield return new WaitForSeconds(0.1f);
+                }
+                else
+                {
+                    discardSelectable.OnInteract();
+                    yield return new WaitForSeconds(0.1f);
+                }
+                if (currentIndex == interval + 1)
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (handObjects[i].activeSelf)
+                        {
+                            if (tables[tableNumber * 16 + handCards[i]] == 2)
+                            {
+                                handSelectable[i].OnInteract();
+                                yield break;
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                handSelectable[valids.PickRandom()].OnInteract();
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
     }
 }
