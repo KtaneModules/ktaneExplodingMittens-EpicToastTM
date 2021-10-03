@@ -218,9 +218,9 @@ public class explodingMittensScript : MonoBehaviour {
 
     void Use(int cardToDiscard)
     {
-        if (tables[tableNumber * 16 + handCards[cardToDiscard]] == 2 && tables[tableNumber * 16 + lastCard] == 5)
+        if (tables[tableNumber * 16 + handCards[cardToDiscard]] == 2 && interval - currentIndex == 0)
         {
-            DebugMsg("You played a Defuse card on an Exploding Mitten card. Module solved!");
+            DebugMsg("You played a Defuse card when an Exploding Mitten was at the top of the deck. Module solved!");
             Module.HandlePass();
             solved = true;
 
