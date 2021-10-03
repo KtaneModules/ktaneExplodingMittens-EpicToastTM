@@ -421,6 +421,23 @@ public class explodingMittensScript : MonoBehaviour {
     {
         while (true)
         {
+            if (currentIndex == interval)
+            {
+                List<int> defuses = new List<int>();
+                for (int i = 0; i < 3; i++)
+                {
+                    if (handObjects[i].activeSelf)
+                    {
+                        if (tables[tableNumber * 16 + handCards[i]] == 2)
+                            defuses.Add(i);
+                    }
+                }
+                if (defuses.Count != 0)
+                {
+                    handSelectable[defuses.PickRandom()].OnInteract();
+                    yield break;
+                }
+            }
             List<int> valids = new List<int>();
             for (int i = 0; i < 3; i++)
             {
@@ -432,7 +449,7 @@ public class explodingMittensScript : MonoBehaviour {
             }
             if (valids.Count == 0)
             {
-                if (currentIndex == defuseIndex)
+                if (currentIndex == defuseIndex && !handCards.Contains(2) && handCards.Contains(99))
                 {
                     drawSelectable.OnInteract();
                     yield return new WaitForSeconds(0.1f);
@@ -441,20 +458,6 @@ public class explodingMittensScript : MonoBehaviour {
                 {
                     discardSelectable.OnInteract();
                     yield return new WaitForSeconds(0.1f);
-                }
-                if (currentIndex == interval + 1)
-                {
-                    for (int i = 0; i < 3; i++)
-                    {
-                        if (handObjects[i].activeSelf)
-                        {
-                            if (tables[tableNumber * 16 + handCards[i]] == 2)
-                            {
-                                handSelectable[i].OnInteract();
-                                yield break;
-                            }
-                        }
-                    }
                 }
             }
             else
